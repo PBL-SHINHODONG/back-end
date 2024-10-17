@@ -58,11 +58,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to AWS EC2
-        uses: appleboy/ssh-action@v0.1.6
+        uses: appleboy/ssh-action@v0.1.4
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
           script: |
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
             docker stop ${{ env.CONTAINER_NAME }} || true
