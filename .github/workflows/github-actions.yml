@@ -1,3 +1,10 @@
+name: PBL back-end gitHub actions
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   test-python-code:
     runs-on: ubuntu-latest
