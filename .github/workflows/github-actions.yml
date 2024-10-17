@@ -52,6 +52,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          build-args: |
+            ${{ secrets.AWS_RDS_CONFIG }}
 
   deploy-to-ec2:
     needs: build-and-push-docker
