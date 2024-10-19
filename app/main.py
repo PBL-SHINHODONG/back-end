@@ -6,7 +6,7 @@ from app.routers import places
 app = FastAPI()
 
 origins = [
-    ["*"],
+    "*"
 ]
 
 app.add_middleware(
