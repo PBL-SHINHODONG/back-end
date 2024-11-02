@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 from app.schemas.places import (
     BasicPlaceInfoResponse,
     PlaceDetailsResponse, 
-    CoordinatesResponse,
+    LatitudeLongitudeResponse,
     NaverPlaceInfoResponse,
     KakaoPlaceInfoResponse
 )
 from app.models.places import Place, NaverPlace, KakaoPlace
+from app.dependencies import toLatLng
 
 def get_place_by_id(session: Session, place_id: int) -> Optional[PlaceDetailsResponse]:
     place = session.query(Place).filter(Place.id == place_id).first()
@@ -56,16 +57,19 @@ def get_places(
     return [get_place_details(session, place) for place in places]
 
 
-def get_place_coordinate(session: Session, place_id: int) -> Optional[CoordinatesResponse]:
+def get_place_coordinate(session: Session, place_id: int) -> Optional[LatitudeLongitudeResponse]:
     coordinate = session.query(Place.pos_x, Place.pos_y).filter(Place.id == place_id).first()
     if coordinate:
-        return CoordinatesResponse(pos_x=coordinate.pos_x, pos_y=coordinate.pos_y)
+        latitude, longitude = toLatLng(coordinate.pos_x, coordinate.pos_y)
+        return LatitudeLongitudeResponse(latitude=latitude, longitude=longitude)
     return None
 
 
 def get_place_details(session: Session, place: Place) -> Optional[PlaceDetailsResponse]:
     if not place:
         return None
+
+    latitude, longitude = toLatLng(place.pos_x, place.pos_y)
     
     naver_info = get_naver_place_info(session, place.id)
     kakao_info = get_kakao_place_info(session, place.id)
@@ -76,7 +80,7 @@ def get_place_details(session: Session, place: Place) -> Optional[PlaceDetailsRe
             address=place.address,
             street_address=place.street_address,
             category=place.category,
-            coordinates={"pos_x": place.pos_x, "pos_y": place.pos_y}
+            LatLng=LatitudeLongitudeResponse(latitude=latitude, longitude=longitude)
         ),
         naver_info=naver_info if naver_info else None,
         kakao_info=kakao_info if kakao_info else None
