@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 from typing import Optional
 
-class CoordinatesResponse(BaseModel):
-    pos_x: float
-    pos_y: float
+class LatitudeLongitudeResponse(BaseModel):
+    latitude: float
+    longitude: float
 
 
 class BasicPlaceInfoResponse(BaseModel):
@@ -11,7 +11,7 @@ class BasicPlaceInfoResponse(BaseModel):
     address: Optional[str]
     street_address: str
     category: str
-    coordinates: CoordinatesResponse
+    LatLng: LatitudeLongitudeResponse
 
 
 class NaverPlaceInfoResponse(BaseModel):

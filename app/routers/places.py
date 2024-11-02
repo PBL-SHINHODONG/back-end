@@ -6,7 +6,7 @@ from typing import Optional, Union
 from app.database import SessionLocal
 from app.schemas.places import (
     PlaceDetailsResponse, 
-    CoordinatesResponse,
+    LatitudeLongitudeResponse,
     NaverPlaceInfoResponse,
     KakaoPlaceInfoResponse
 )
@@ -70,7 +70,7 @@ async def get_places(
     return paginate(place_list, params)
 
 
-@router.get("/{place_id}/coordinates", response_model=CoordinatesResponse)
+@router.get("/{place_id}/coordinates", response_model=LatitudeLongitudeResponse)
 async def get_place_coordinate(place_id: int):
     coordinate = places.get_place_coordinate(session, place_id)
     if not coordinate:

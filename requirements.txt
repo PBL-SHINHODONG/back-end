@@ -1,4 +1,9 @@
 fastapi[standard]
 fastapi-pagination
 sqlalchemy
+
+# AWS RDS
 pymysql
+
+# Coordinate
+pyproj
