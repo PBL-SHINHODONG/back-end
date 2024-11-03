@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi_pagination import Page, Params, paginate, add_pagination
 
 from typing import Optional, Union

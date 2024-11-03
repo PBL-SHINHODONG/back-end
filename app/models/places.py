@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
 
 from app.database import Base
 
@@ -11,6 +12,8 @@ class Place(Base):
     category = Column(String(255), index=True, nullable=False)
     pos_x = Column(Float, nullable=False)
     pos_y = Column(Float, nullable=False)
+
+    visited_places = relationship("VisitedPlace", back_populates="place")
 
 
 class NaverPlace(Base):
