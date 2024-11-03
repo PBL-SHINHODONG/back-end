@@ -60,7 +60,7 @@ def get_places(
 def get_place_coordinate(session: Session, place_id: int) -> Optional[LatitudeLongitudeResponse]:
     coordinate = session.query(Place.pos_x, Place.pos_y).filter(Place.id == place_id).first()
     if coordinate:
-        latitude, longitude = toLatLng(coordinate.pos_x, coordinate.pos_y)
+        longitude, latitude = toLatLng(coordinate.pos_x, coordinate.pos_y)
         return LatitudeLongitudeResponse(latitude=latitude, longitude=longitude)
     return None
 
@@ -69,7 +69,7 @@ def get_place_details(session: Session, place: Place) -> Optional[PlaceDetailsRe
     if not place:
         return None
 
-    latitude, longitude = toLatLng(place.pos_x, place.pos_y)
+    longitude, latitude = toLatLng(place.pos_x, place.pos_y)
     
     naver_info = get_naver_place_info(session, place.id)
     kakao_info = get_kakao_place_info(session, place.id)
