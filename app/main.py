@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import places
+from app.routers import places, users, visitedplaces
 
 app = FastAPI()
 
@@ -18,6 +18,8 @@ app.add_middleware(
 )
 
 app.include_router(places.router)
+app.include_router(users.router)
+app.include_router(visitedplaces.router)
 
 @app.get("/")
 async def healthcheck():
