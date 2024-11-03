@@ -15,7 +15,7 @@ class Place(Base):
 
     visited_places = relationship("VisitedPlace", back_populates="place")
 
-
+    
 class NaverPlace(Base):
     __tablename__ = "n_place"
     id = Column(Integer, primary_key=True, index=True)

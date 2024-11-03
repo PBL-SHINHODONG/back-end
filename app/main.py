@@ -6,7 +6,7 @@ from app.routers import places, users, visitedplaces
 app = FastAPI()
 
 origins = [
-    ["*"],
+    "*"
 ]
 
 app.add_middleware(
