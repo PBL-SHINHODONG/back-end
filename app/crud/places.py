@@ -11,7 +11,8 @@ from app.schemas.places import (
     KakaoPlaceInfoResponse
 )
 from app.models.places import Place, NaverPlace, KakaoPlace
-from app.dependencies import toLatLng
+from app.models.users import User
+from app.dependencies import toLatLng, getSeason, isWeekend
 
 def get_place_by_id(session: Session, place_id: int) -> Optional[PlaceDetailsResponse]:
     place = session.query(Place).filter(Place.id == place_id).first()
@@ -39,7 +40,7 @@ def get_kakao_place_info(session: Session, place_id: int) -> Optional[KakaoPlace
 
 
 def get_place_by_name(session: Session, place_name: str) -> Optional[PlaceDetailsResponse]:
-    place = session.query(Place).filter(Place.name == place_name).first()
+    place = session.query(Place).filter(Place.name.ilike(place_name)).first()
     return get_place_details(session, place)
 
 
@@ -87,5 +88,16 @@ def get_place_details(session: Session, place: Place) -> Optional[PlaceDetailsRe
     )
 
 
-def get_place_recommend(session: Session) -> PlaceDetailsResponse:
-    return None
+def get_place_recommend(session: Session, model, tafp_df, user_id: int) -> List[PlaceDetailsResponse]:
+    user = session.query(User).filter(User.id == user_id).first()
+
+    user_info = [isWeekend(), getSeason(), 0 if user.sex == False else 1, user.age_group]
+    user_cluster = model.predict([user_info])[0]
+
+    recommended_places = tafp_df[model.labels_ == user_cluster]
+    place_names = recommended_places.sort_values("pop", ascending=False)["name"].unique()[:10].tolist()
+
+    return [
+        place for place_name in place_names 
+        if (place := get_place_by_name(session, place_name)) is not None
+    ]
