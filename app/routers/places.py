@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import Request, APIRouter, HTTPException, Depends
 from fastapi_pagination import Page, Params, paginate, add_pagination
 
 from typing import Optional, Union
@@ -78,9 +78,13 @@ async def get_place_coordinate(place_id: int):
     return coordinate
 
 
-@router.get("/recommend", response_model=Page[PlaceDetailsResponse])
-async def get_place_recommend():
-    place_list = places.get_place_recommend(session)
+@router.get("/{user_id}/recommend", response_model=Page[PlaceDetailsResponse])
+async def get_place_recommend(user_id: int, request: Request, params: Params = Depends()):
+    params.size = 10
+    model = request.app.state.model
+    tafp_df = request.app.state.tafp_df
+    place_list = places.get_place_recommend(session, model, tafp_df, user_id)
     if not place_list:
         raise HTTPException(status_code=404, detail="places not found")
-    return place_list
+    return paginate(place_list, params)
+

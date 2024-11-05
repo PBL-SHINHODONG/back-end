@@ -7,3 +7,8 @@ pymysql
 
 # Coordinate
 pyproj
+
+# ML
+huggingface_hub
+joblib
+pandas

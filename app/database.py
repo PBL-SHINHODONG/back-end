@@ -8,7 +8,7 @@ import os
 
 AWS_RDS_URL = os.getenv("AWS_RDS_URL")
 
-engine = create_engine(AWS_RDS_URL ,echo=True)
+engine = create_engine(AWS_RDS_URL ,echo=False)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
