@@ -5,19 +5,19 @@ from sqlalchemy.orm import Session
 from app.models.users import User
 from app.schemas.users import UserResponse, UserCreateRequest, UserLoginRequest
 
-def get_user_by_id(session: Session, user_id: int) -> Optional[UserResponse]:
-    return session.query(User).filter(User.id == user_id).first()
+def get_user_by_id(db: Session, user_id: int) -> Optional[UserResponse]:
+    return db.query(User).filter(User.id == user_id).first()
 
 
-def login(session: Session, user: UserLoginRequest) -> Optional[UserResponse]:
-    user = session.query(User).filter(User.email == user.email).first()
+def login(db: Session, user: UserLoginRequest) -> Optional[UserResponse]:
+    user = db.query(User).filter(User.email == user.email).first()
     if user and user.password == user.password:
         return user
     return None 
 
 
-def register(session: Session, user: UserCreateRequest) -> Optional[UserResponse]:
-    if session.query(User).filter(User.email == user.email).first():
+def register(db: Session, user: UserCreateRequest) -> Optional[UserResponse]:
+    if db.query(User).filter(User.email == user.email).first():
         return None 
 
     new_user = User(
@@ -31,17 +31,17 @@ def register(session: Session, user: UserCreateRequest) -> Optional[UserResponse
         preferred_atmosphere=user.preferred_atmosphere,
     )
 
-    session.add(new_user)
-    session.commit()
-    session.refresh(new_user)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
     return new_user
 
 
-def delete_user(session: Session, user_id: int) -> bool:
-    user = session.query(User).filter(User.id == user_id).first()
+def delete_user(db: Session, user_id: int) -> bool:
+    user = db.query(User).filter(User.id == user_id).first()
     
     if user:
-        session.delete(user)
-        session.commit()
+        db.delete(user)
+        db.commit()
         return True
     return False
