@@ -11,6 +11,7 @@ class UserCreateRequest(BaseModel):
     preferred_atmosphere: str
 
 class UserResponse(BaseModel):
+    id: int
     email: str
     sex: bool
     age_group: int
