@@ -7,6 +7,7 @@ class LatitudeLongitudeResponse(BaseModel):
 
 
 class BasicPlaceInfoResponse(BaseModel):
+    id: int
     name: str
     address: Optional[str]
     street_address: str

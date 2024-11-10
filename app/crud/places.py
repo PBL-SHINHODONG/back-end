@@ -77,6 +77,7 @@ def get_place_details(db: Session, place: Place) -> Optional[PlaceDetailsRespons
 
     return PlaceDetailsResponse(
         basic_info=BasicPlaceInfoResponse(
+            id=place.id,
             name=place.name,
             address=place.address,
             street_address=place.street_address,
