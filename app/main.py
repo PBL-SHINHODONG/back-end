@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from app.routers import places, users, visitedplaces
+from app.routers import places, users, visitedplaces, menus
 
 from huggingface_hub import hf_hub_download
 
@@ -45,6 +45,7 @@ app.add_middleware(
 app.include_router(places.router)
 app.include_router(users.router)
 app.include_router(visitedplaces.router)
+app.include_router(menus.router)
 
 @app.get("/")
 async def healthcheck():

@@ -14,6 +14,7 @@ class Place(Base):
     pos_y = Column(Float, nullable=False)
 
     visited_places = relationship("VisitedPlace", back_populates="place")
+    menus = relationship("Menu", back_populates="place")
 
     
 class NaverPlace(Base):
