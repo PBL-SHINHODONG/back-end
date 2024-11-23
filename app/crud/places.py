@@ -2,6 +2,7 @@ from typing import List, Optional, Union
 
 from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 
 from app.schemas.places import (
     BasicPlaceInfoResponse,
@@ -56,16 +57,49 @@ def get_places_by_name(
     return [get_place_details(db, place) for place in places]
 
 
-def get_places_by_review_count(
+def get_places(
     db: Session, 
-    order: Optional[str], 
-    offset: int, 
-    limit: int,
+    sort_by: str,
+    order: Optional[str] = "desc",
+    offset: int = 0, 
+    limit: int = 10,
 ) -> List[PlaceDetailsResponse]:
-    query = db.query(Place)
-    query = query.order_by(desc(Place.review_count)) if order == "desc" else query.order_by(asc(Place.review_count))
+    if sort_by == "name":
+        query = db.query(Place)
+        query = query.order_by(desc(Place.name)) if order == "desc" else query.order_by(asc(Place.name))
+    elif sort_by == "review_count":
+        query = (
+            db.query(
+                Place,
+                func.greatest(
+                    func.coalesce(NaverPlace.review_count, 0),
+                    func.coalesce(KakaoPlace.review_count, 0)
+                ).label("max_review_count")
+            )
+            .join(NaverPlace, Place.id == NaverPlace.place_id, isouter=True)
+            .join(KakaoPlace, Place.id == KakaoPlace.place_id, isouter=True)
+            .group_by(Place.id)
+        )
+        query = query.order_by(desc("max_review_count") if order == "desc" else asc("max_review_count"))
+    elif sort_by == "score":
+        query = (
+            db.query(
+                Place,
+                func.greatest(
+                    func.coalesce(NaverPlace.score, 0),
+                    func.coalesce(KakaoPlace.score, 0)
+                ).label("max_score")
+            )
+            .join(NaverPlace, Place.id == NaverPlace.place_id, isouter=True)
+            .join(KakaoPlace, Place.id == KakaoPlace.place_id, isouter=True)
+            .group_by(Place.id)
+        )
+        query = query.order_by(desc("max_score") if order == "desc" else asc("max_score"))
+    else:
+        raise ValueError(f"Invalid sort_by value: {sort_by}")
+
     places = query.offset(offset).limit(limit).all()
-    return [get_place_details(db, place) for place in places]
+    return [get_place_details(db, place if sort_by == "name" else place[0]) for place in places]
 
 
 def get_places_by_score(
