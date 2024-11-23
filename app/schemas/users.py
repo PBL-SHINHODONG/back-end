@@ -21,7 +21,7 @@ class UserResponse(BaseModel):
     preferred_atmosphere: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserLoginRequest(BaseModel):
     email: str

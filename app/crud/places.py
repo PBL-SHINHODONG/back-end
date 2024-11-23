@@ -44,17 +44,39 @@ def get_place_by_name(db: Session, place_name: str) -> Optional[PlaceDetailsResp
     return get_place_details(db, place)
 
 
-def get_places(
+def get_places_by_name(
     db: Session, 
-    sort_by: Union[str, None], 
-    order: Optional[str],
+    order: Optional[str], 
     offset: int, 
     limit: int,
 ) -> List[PlaceDetailsResponse]:
     query = db.query(Place)
-    if sort_by and sort_by in ["name", "score", "review_count"]:    
-        query = query.order_by(desc(getattr(Place, sort_by))) if order == "desc" else query.order_by(asc(getattr(Place, sort_by)))
+    query = query.order_by(desc(Place.name)) if order == "desc" else query.order_by(asc(Place.name))
     places = query.offset(offset).limit(limit).all()
+    return [get_place_details(db, place) for place in places]
+
+
+def get_places_by_review_count(
+    db: Session, 
+    order: Optional[str], 
+    offset: int, 
+    limit: int,
+) -> List[PlaceDetailsResponse]:
+    query = db.query(Place)
+    query = query.order_by(desc(Place.review_count)) if order == "desc" else query.order_by(asc(Place.review_count))
+    places = query.offset(offset).limit(limit).all()
+    return [get_place_details(db, place) for place in places]
+
+
+def get_places_by_score(
+    db: Session, 
+    order: Optional[str],
+    offset: int, 
+    limit: int,
+) -> List[PlaceDetailsResponse]:
+    query = query.order_by(desc(getattr(Place, sort_by))) if order == "desc" else query.order_by(asc(getattr(Place, sort_by)))
+    places = query.offset(offset).limit(limit).all()
+
     return [get_place_details(db, place) for place in places]
 
 
