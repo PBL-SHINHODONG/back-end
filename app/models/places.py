@@ -15,6 +15,7 @@ class Place(Base):
 
     visited_places = relationship("VisitedPlace", back_populates="place")
     menus = relationship("Menu", back_populates="place")
+    reviews = relationship("Review", back_populates="place")
 
     
 class NaverPlace(Base):

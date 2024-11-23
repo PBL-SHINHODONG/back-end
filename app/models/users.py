@@ -16,3 +16,4 @@ class User(Base):
     preferred_atmosphere = Column(String(255), nullable=False)
 
     visited_places = relationship("VisitedPlace", back_populates="user")
+    reviews = relationship("Review", back_populates="user")
