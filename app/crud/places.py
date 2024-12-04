@@ -24,7 +24,7 @@ def get_naver_place_info(db: Session, place_id: int) -> Optional[NaverPlaceInfoR
     naver_place = db.query(NaverPlace).filter(NaverPlace.place_id == place_id).first()
     return NaverPlaceInfoResponse(
         street_address=naver_place.street_address,
-        category=naver_place.category,
+        category=naver_place.subcategory,
         score=naver_place.score,
         review_count=naver_place.review_count
     ) if naver_place else None
@@ -34,7 +34,7 @@ def get_kakao_place_info(db: Session, place_id: int) -> Optional[KakaoPlaceInfoR
     kakao_place = db.query(KakaoPlace).filter(KakaoPlace.place_id == place_id).first()
     return KakaoPlaceInfoResponse(
         street_address=kakao_place.street_address,
-        category=kakao_place.category,
+        category=kakao_place.subcategory,
         score=kakao_place.score,
         review_count=kakao_place.review_count
     ) if kakao_place else None
@@ -137,7 +137,7 @@ def get_place_details(db: Session, place: Place) -> Optional[PlaceDetailsRespons
             name=place.name,
             address=place.address,
             street_address=place.street_address,
-            category=place.category,
+            category=place.category.name,
             LatLng=LatitudeLongitudeResponse(latitude=latitude, longitude=longitude)
         ),
         naver_info=naver_info if naver_info else None,
