@@ -102,18 +102,6 @@ def get_places(
     return [get_place_details(db, place if sort_by == "name" else place[0]) for place in places]
 
 
-def get_places_by_score(
-    db: Session, 
-    order: Optional[str],
-    offset: int, 
-    limit: int,
-) -> List[PlaceDetailsResponse]:
-    query = query.order_by(desc(getattr(Place, sort_by))) if order == "desc" else query.order_by(asc(getattr(Place, sort_by)))
-    places = query.offset(offset).limit(limit).all()
-
-    return [get_place_details(db, place) for place in places]
-
-
 def get_place_coordinate(db: Session, place_id: int) -> Optional[LatitudeLongitudeResponse]:
     coordinate = db.query(Place.pos_x, Place.pos_y).filter(Place.id == place_id).first()
     if coordinate:
