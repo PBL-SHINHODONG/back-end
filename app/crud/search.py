@@ -10,7 +10,7 @@ from app.models.menus import Menu
 
 def search_keyword(db: Session, keyword: str) -> List[SearchResponse]:
     results = db.query(Place.id, Place.name, Menu.menu) \
-        .join(Menu, Place.id == Menu.place_id) \
+        .outerjoin(Menu, Place.id == Menu.place_id) \
         .filter(or_(
             Place.name.like(f'%{keyword}%'),
             Menu.menu.like(f'%{keyword}%')
