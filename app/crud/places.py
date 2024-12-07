@@ -1,8 +1,8 @@
 from typing import List, Optional, Union
 
-from sqlalchemy import desc, asc
+from sqlalchemy import desc, asc, literal, or_
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import func
+from sqlalchemy import func, case
 
 from app.schemas.places import (
     BasicPlaceInfoResponse,
@@ -13,7 +13,9 @@ from app.schemas.places import (
 )
 from app.models.places import Place, NaverPlace, KakaoPlace
 from app.models.users import User
-from app.dependencies import toLatLng, getSeason, isWeekend
+from app.models.visitedplaces import VisitedPlace
+from app.dependencies import getSeason, isWeekend, getCategory, haversine_query
+from app.schemas.users import UserPresentLocation
 
 def get_place_by_id(db: Session, place_id: int) -> Optional[PlaceDetailsResponse]:
     place = db.query(Place).filter(Place.id == place_id).first()
@@ -105,7 +107,7 @@ def get_places(
 def get_place_coordinate(db: Session, place_id: int) -> Optional[LatitudeLongitudeResponse]:
     coordinate = db.query(Place.pos_x, Place.pos_y).filter(Place.id == place_id).first()
     if coordinate:
-        longitude, latitude = toLatLng(coordinate.pos_x, coordinate.pos_y)
+        latitude, longitude = coordinate.pos_x, coordinate.pos_y
         return LatitudeLongitudeResponse(latitude=latitude, longitude=longitude)
     return None
 
@@ -114,7 +116,7 @@ def get_place_details(db: Session, place: Place) -> Optional[PlaceDetailsRespons
     if not place:
         return None
 
-    longitude, latitude = toLatLng(place.pos_x, place.pos_y)
+    latitude, longitude = place.pos_x, place.pos_y
     
     naver_info = get_naver_place_info(db, place.id)
     kakao_info = get_kakao_place_info(db, place.id)
@@ -145,4 +147,84 @@ def get_place_recommend(db: Session, model, tafp_df, user_id: int) -> List[Place
     return [
         place for place_name in place_names 
         if (place := get_place_by_name(db, place_name)) is not None
+    ]
+
+def places_filtering(db, user, query):
+    # 1. 방문한 장소 제외
+    visited_places_subquery = (
+        db.query(VisitedPlace.place_id)
+        .filter(VisitedPlace.user_id == user.id)
+        .subquery()
+    )
+    query = query.filter(~Place.id.in_(visited_places_subquery))
+
+    # 2. 거리 필터링
+    user_lat, user_lon = user.latitude, user.longitude
+
+    # 2.1 거리 계산 및 필터링(10km 이내)  
+    query = query.filter(
+        haversine_query(
+            literal(user_lat),
+            literal(user_lon),
+            Place.pos_x,
+            Place.pos_y
+        ) < 10
+    )
+
+    # 3. 평균 계산 로직 (None 값을 무시)
+    avg_score = case(
+        (NaverPlace.score.isnot(None) & KakaoPlace.score.isnot(None), (NaverPlace.score + KakaoPlace.score) / 2),
+        (NaverPlace.score.isnot(None), NaverPlace.score),
+        (KakaoPlace.score.isnot(None), KakaoPlace.score),
+        else_=None
+    )
+
+    avg_review_count = case(
+        (NaverPlace.review_count.isnot(None) & KakaoPlace.review_count.isnot(None), (NaverPlace.review_count + KakaoPlace.review_count) / 2),
+        (NaverPlace.review_count.isnot(None), NaverPlace.review_count),
+        (KakaoPlace.review_count.isnot(None), KakaoPlace.review_count),
+        else_=None
+    )
+
+    query = query.filter(avg_score.isnot(None))
+
+    # 3. 평균 점수 및 리뷰 수 기준 정렬
+    query = query.order_by(avg_score.desc(), avg_review_count.desc())
+
+    # 4. 상위 10개만 반환 및 ID 추출
+    place_ids = query.with_entities(Place.id).limit(10).all()
+
+    return [place_id[0] for place_id in place_ids]
+
+
+def filter_by_category(query, category):
+    subcategory_ids = getCategory(category)
+    if subcategory_ids:
+        query = query.filter(
+            or_(
+                *(NaverPlace.subcategory_id == id for id in subcategory_ids),
+                *(KakaoPlace.subcategory_id == id for id in subcategory_ids),
+            )
+        )
+    return query
+
+def get_content_based_recommend(db: Session, user : UserPresentLocation, category: str) -> List[PlaceDetailsResponse]:
+    # 쿼리 작성
+    query = db.query(
+        Place.id,
+        Place.pos_x,
+        Place.pos_y,
+        NaverPlace.subcategory_id,
+        NaverPlace.score,
+        NaverPlace.review_count,
+        KakaoPlace.subcategory_id,
+        KakaoPlace.score,
+        KakaoPlace.review_count
+    ).outerjoin(NaverPlace, Place.id == NaverPlace.place_id)\
+    .outerjoin(KakaoPlace, Place.id == KakaoPlace.place_id)
+    query = filter_by_category(query, category)
+    place_id_list = places_filtering(db, user, query)
+    return [
+        place for id in place_id_list
+        if (place := get_place_by_id(db, id)) is not None
     ]
