@@ -1,7 +1,7 @@
 from fastapi import Request, APIRouter, HTTPException, Depends
 from fastapi_pagination import Page, Params, paginate, add_pagination
 
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -12,6 +12,7 @@ from app.schemas.places import (
     KakaoPlaceInfoResponse
 )
 from app.crud import places
+from app.schemas.users import UserPresentLocation
 
 router = APIRouter(
     prefix="/places",
@@ -19,7 +20,6 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 add_pagination(router)
-
 
 @router.get("/{place_id}", response_model=PlaceDetailsResponse)
 async def get_place_by_id(place_id: int, db: Session = Depends(get_db)):
@@ -93,3 +93,10 @@ async def get_place_recommend(
         raise HTTPException(status_code=404, detail="places not found")
     return paginate(place_list, params)
 
+
+@router.get("/content/{category}", response_model=List[PlaceDetailsResponse])
+async def get_content_based_recommend(user: UserPresentLocation, category : str, db: Session = Depends(get_db)):
+    place_list = places.get_content_based_recommend(db, user, category)
+    if not place_list:
+        raise HTTPException(status_code=404, detail="places not found")
+    return place_list

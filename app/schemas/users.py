@@ -26,3 +26,8 @@ class UserResponse(BaseModel):
 class UserLoginRequest(BaseModel):
     email: str
     password: str
+
+class UserPresentLocation(BaseModel):
+    id: int
+    latitude: float
+    longitude: float
