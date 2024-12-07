@@ -94,7 +94,7 @@ async def get_place_recommend(
     return paginate(place_list, params)
 
 
-@router.get("/content/{category}", response_model=List[PlaceDetailsResponse])
+@router.post("/content/{category}", response_model=List[PlaceDetailsResponse])
 async def get_content_based_recommend(user: UserPresentLocation, category : str, db: Session = Depends(get_db)):
     place_list = places.get_content_based_recommend(db, user, category)
     if not place_list:
