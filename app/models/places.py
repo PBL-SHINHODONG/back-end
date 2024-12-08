@@ -3,6 +3,8 @@ from sqlalchemy.orm import relationship
 
 from app.database import Base
 
+from app.models.categories import Category
+
 class Place(Base):
     __tablename__ = "place"
     id = Column(Integer, primary_key=True, index=True)
@@ -43,12 +45,3 @@ class KakaoPlace(Base):
     subcategory_id = Column(Integer, ForeignKey("category.id"))
 
     category = relationship("Category", back_populates="kakao_places")
-
-class Category(Base):
-    __tablename__ = "category"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), index=True, nullable=False)
-
-    places = relationship("Place", back_populates="category")
-    naver_places = relationship("NaverPlace", back_populates="category")
-    kakao_places = relationship("KakaoPlace", back_populates="category")

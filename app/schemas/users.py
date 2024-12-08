@@ -10,6 +10,7 @@ class UserCreateRequest(BaseModel):
     budget_range: str
     preferred_atmosphere: str
 
+
 class UserResponse(BaseModel):
     id: int
     email: str
@@ -23,11 +24,7 @@ class UserResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
 class UserLoginRequest(BaseModel):
     email: str
     password: str
-
-class UserPresentLocation(BaseModel):
-    id: int
-    latitude: float
-    longitude: float
