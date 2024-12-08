@@ -10,6 +10,7 @@ from app.routers import places, users, visitedplaces, menus, reviews, search
 
 from huggingface_hub import hf_hub_download
 from tensorflow.keras.models import load_model
+from tensorflow.keras.losses import MeanSquaredError
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,7 +29,7 @@ async def lifespan(app: FastAPI):
         token=HUGGING_FACE_TOKEN
     )
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-    app.state.cf_model = load_model(model_path)
+    app.state.cf_model = load_model(model_path, custom_objects={"mse": MeanSquaredError()})
 
     file_path = hf_hub_download(
         repo_id="GomDue/kmodes_model",
