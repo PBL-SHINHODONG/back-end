@@ -27,6 +27,7 @@ async def lifespan(app: FastAPI):
         filename="collaborative_filtering_model.h5",
         token=HUGGING_FACE_TOKEN
     )
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
     app.state.cf_model = load_model(model_path)
 
     file_path = hf_hub_download(
