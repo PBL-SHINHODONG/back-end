@@ -13,3 +13,4 @@ kmodes
 huggingface_hub
 joblib
 pandas
+tensorflow
