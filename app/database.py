@@ -8,12 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AWS_RDS_URL = os.getenv("AWS_RDS_URL")
-
-engine = create_engine(AWS_RDS_URL, echo=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
 
 def get_db():
     db = SessionLocal()
@@ -25,3 +21,8 @@ def get_db():
         raise
     finally:
         db.close()
+
+engine = create_engine(AWS_RDS_URL, echo=True)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()

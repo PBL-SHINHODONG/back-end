@@ -33,3 +33,17 @@ class PlaceDetailsResponse(BaseModel):
     basic_info: BasicPlaceInfoResponse
     naver_info: Optional[NaverPlaceInfoResponse] = None
     kakao_info: Optional[KakaoPlaceInfoResponse] = None
+
+
+class ContentBasedRecommedRequest(BaseModel):
+    user_id: int
+    latitude: float
+    longitude: float
+    top_n: int
+
+
+class CollaborativeBasedRecommendRequest(BaseModel):
+    user_id: int
+    latitude: float
+    longitude: float
+    top_n: int

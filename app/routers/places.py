@@ -1,7 +1,7 @@
 from fastapi import Request, APIRouter, HTTPException, Depends
 from fastapi_pagination import Page, Params, paginate, add_pagination
 
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from sqlalchemy.orm import Session
 from app.database import get_db
@@ -9,10 +9,12 @@ from app.schemas.places import (
     PlaceDetailsResponse, 
     LatitudeLongitudeResponse,
     NaverPlaceInfoResponse,
-    KakaoPlaceInfoResponse
+    KakaoPlaceInfoResponse,
+    ContentBasedRecommedRequest,
+    CollaborativeBasedRecommendRequest
 )
 from app.crud import places
-from app.schemas.users import UserPresentLocation
+
 
 router = APIRouter(
     prefix="/places",
@@ -20,6 +22,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 add_pagination(router)
+
 
 @router.get("/{place_id}", response_model=PlaceDetailsResponse)
 async def get_place_by_id(place_id: int, db: Session = Depends(get_db)):
@@ -78,25 +81,47 @@ async def get_place_coordinate(place_id: int, db: Session = Depends(get_db)):
     return coordinate
 
 
-@router.get("/{user_id}/recommend", response_model=Page[PlaceDetailsResponse])
-async def get_place_recommend(
+@router.get("/recommend/cluster/{user_id}", response_model=Page[PlaceDetailsResponse])
+async def get_cluster_based_recommend(
     user_id: int, 
     request: Request, 
     params: Params = Depends(), 
     db: Session = Depends(get_db)
 ):
     params.size = 10
-    model = request.app.state.model
+    model = request.app.state.c_model
     tafp_df = request.app.state.tafp_df
-    place_list = places.get_place_recommend(db, model, tafp_df, user_id)
+    place_list = places.get_cluster_based_recommend(db, model, tafp_df, user_id)
     if not place_list:
         raise HTTPException(status_code=404, detail="places not found")
     return paginate(place_list, params)
 
 
-@router.post("/content/{category}", response_model=List[PlaceDetailsResponse])
-async def get_content_based_recommend(user: UserPresentLocation, category : str, db: Session = Depends(get_db)):
-    place_list = places.get_content_based_recommend(db, user, category)
+@router.post("/recommend/content/{category}", response_model=Page[PlaceDetailsResponse])
+async def get_content_based_recommend(
+    category : str, 
+    payload: ContentBasedRecommedRequest, 
+    params: Params = Depends(), 
+    db: Session = Depends(get_db)
+):
+    params.size = 10
+    place_list = places.get_content_based_recommend(db, category, payload)
     if not place_list:
         raise HTTPException(status_code=404, detail="places not found")
-    return place_list
+    return paginate(place_list, params)
+
+
+@router.post("/recommend/collaborative/{category}", response_model=Page[PlaceDetailsResponse])
+async def get_collaborative_based_recommend(
+    category : str, 
+    payload: CollaborativeBasedRecommendRequest, 
+    request: Request, 
+    params: Params = Depends(),
+    db: Session = Depends(get_db)
+):
+    params.size = 10
+    model = request.app.state.cf_model
+    place_list = places.get_collaborative_based_recommend(db, model, category, payload)
+    if not place_list:
+        raise HTTPException(status_code=404, detail="places not found")
+    return paginate(place_list, params)
