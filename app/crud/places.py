@@ -18,7 +18,7 @@ from app.schemas.places import (
 from app.models.places import Place, NaverPlace, KakaoPlace
 from app.models.users import User
 from app.models.visitedplaces import VisitedPlace
-from app.dependencies import getSeason, isWeekend, getCategoryCode, getHaversine
+from app.dependencies import getSeason, isWeekend, getCategoryCode, getHaversine, getCategoryName
 
 
 def get_place_by_id(db: Session, place_id: int) -> Optional[PlaceDetailsResponse]:
