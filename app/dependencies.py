@@ -42,6 +42,36 @@ def getCategoryCode(category):
     }
     return category_mapping.get(category, [])
 
+def getCategoryName(id):
+    category_mapping = {
+        210: "한식",
+        220: "일식",
+        230: "중식",
+        240: "양식",
+        250: "아시아식",
+        260: "주점",
+        270: "미분류",
+        201: "카페",
+        202: "카페",
+        101: "명소",
+        102: "명소",
+        103: "명소",
+        104: "명소",
+        105: "명소",
+        106: "명소",
+        107: "명소",
+        108: "명소",
+        109: "명소",
+        401: "명소",
+        402: "명소",
+        403: "명소", 
+        404: "명소",
+        405: "명소",
+        406: "명소",
+        407: "명소",
+    }
+    return category_mapping.get(id, "미분류")
+
 
 def getHaversine(lat1, lon1, lat2, lon2):
     R = 6371.0 
