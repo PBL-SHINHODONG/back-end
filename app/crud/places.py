@@ -229,9 +229,7 @@ def get_collaborative_based_recommend(
     
     predicted_scores = model.predict([user_ids, all_places, visit_count])
 
-    recommended_place_ids = all_places[np.argsort(predicted_scores.flatten())[::-1][:20]]
-
-    place_id_list = filter_by_category(db, recommended_place_ids, category)
+    place_id_list = all_places[np.argsort(predicted_scores.flatten())[::-1][:20]]
 
     return [
         place for id in place_id_list
