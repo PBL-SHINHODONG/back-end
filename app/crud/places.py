@@ -180,25 +180,27 @@ def get_content_based_recommend(
 
     all_place_ids = db.query(Place.id).all()
 
+    if len(final_subcategories) == 0:
+        final_filtered_ids = filter_by_score(db, [id[0] for id in all_place_ids], payload)[:10]
+    else:
+        final_filtered_ids = []
+        unique_subcategories = list(set(final_subcategories))
 
-    final_filtered_ids = []
-    unique_subcategories = list(set(final_subcategories))
+        subcategory_ratio = {
+            subcategory: final_subcategories.count(subcategory) / len(final_subcategories)
+            for subcategory in unique_subcategories
+        }
 
-    subcategory_ratio = {
-        subcategory: final_subcategories.count(subcategory) / len(final_subcategories)
-        for subcategory in unique_subcategories
-    }
+        for subcategory_id, ratio in subcategory_ratio.items():
+            category_name = getCategoryName(subcategory_id)
+            category_filtered_ids = filter_by_category(db, [id[0] for id in all_place_ids], category_name)
+            filtered_distance_ids = filter_by_dist(db, category_filtered_ids, payload)
+            num_to_select = round(ratio * payload.top_n)
 
-    for subcategory_id, ratio in subcategory_ratio.items():
-        category_name = getCategoryName(subcategory_id)
-        category_filtered_ids = filter_by_category(db, [id[0] for id in all_place_ids], category_name)
-        filtered_distance_ids = filter_by_dist(db, category_filtered_ids, payload, False)
-        num_to_select = round(ratio * payload.top_n)
-
-        final_filtered_ids.extend(filtered_distance_ids[:num_to_select])
-
-    if not final_filtered_ids:
-        final_filtered_ids = filter_by_dist(db, [id[0] for id in all_place_ids], payload, True)[:payload.top_n]
+            final_filtered_ids.extend(filtered_distance_ids[:num_to_select])
+    
+    if len(final_filtered_ids) == 0:
+        final_filtered_ids = filter_by_score(db, [id[0] for id in all_place_ids], payload)[:10]
 
     return [
         place for id in final_filtered_ids
@@ -238,7 +240,7 @@ def get_collaborative_based_recommend(
     ]
 
 
-def filter_by_dist(db: Session, place_ids: List[int], payload: ContentBasedRecommedRequest, empty) -> List[int]:
+def filter_by_dist(db: Session, place_ids: List[int], payload: ContentBasedRecommedRequest) -> List[int]:
     user_lat, user_lon = payload.latitude, payload.longitude
 
     filtered_ids = (
@@ -250,7 +252,53 @@ def filter_by_dist(db: Session, place_ids: List[int], payload: ContentBasedRecom
             ~Place.id.in_(
                 db.query(VisitedPlace.place_id).filter(VisitedPlace.user_id == payload.user_id)
             ),
-            *([] if empty else [getHaversine(literal(user_lat), literal(user_lon), Place.pos_x, Place.pos_y) < 10]),
+            getHaversine(literal(user_lat), literal(user_lon), Place.pos_x, Place.pos_y) < 10,
+            case(
+                (
+                    NaverPlace.score.isnot(None) & KakaoPlace.score.isnot(None),
+                    (NaverPlace.score + KakaoPlace.score) / 2
+                ),
+                (NaverPlace.score.isnot(None), NaverPlace.score),
+                (KakaoPlace.score.isnot(None), KakaoPlace.score),
+                else_=None
+            ).isnot(None)
+        )
+        .order_by(
+            case(
+                (
+                    NaverPlace.score.isnot(None) & KakaoPlace.score.isnot(None),
+                    (NaverPlace.score + KakaoPlace.score) / 2
+                ),
+                (NaverPlace.score.isnot(None), NaverPlace.score),
+                (KakaoPlace.score.isnot(None), KakaoPlace.score),
+                else_=None
+            ).desc(),
+            case(
+                (
+                    NaverPlace.review_count.isnot(None) & KakaoPlace.review_count.isnot(None),
+                    (NaverPlace.review_count + KakaoPlace.review_count) / 2
+                ),
+                (NaverPlace.review_count.isnot(None), NaverPlace.review_count),
+                (KakaoPlace.review_count.isnot(None), KakaoPlace.review_count),
+                else_=None
+            ).desc()
+        )
+        .all()
+    )
+
+    return [id[0] for id in filtered_ids]
+
+def filter_by_score(db: Session, place_ids: List[int], payload: ContentBasedRecommedRequest) -> List[int]:
+
+    filtered_ids = (
+        db.query(Place.id)
+        .outerjoin(NaverPlace, NaverPlace.place_id == Place.id)
+        .outerjoin(KakaoPlace, KakaoPlace.place_id == Place.id)
+        .filter(
+            Place.id.in_(place_ids),
+            ~Place.id.in_(
+                db.query(VisitedPlace.place_id).filter(VisitedPlace.user_id == payload.user_id)
+            ),
             case(
                 (
                     NaverPlace.score.isnot(None) & KakaoPlace.score.isnot(None),
