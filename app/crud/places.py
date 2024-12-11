@@ -180,24 +180,25 @@ def get_content_based_recommend(
 
     all_place_ids = db.query(Place.id).all()
 
-    if not final_subcategories:
-        final_filtered_ids = filter_by_dist(db, [id[0] for id in all_place_ids], payload)[:payload.top_n]
-    else:
-        final_filtered_ids = []
-        unique_subcategories = list(set(final_subcategories))
 
-        subcategory_ratio = {
-            subcategory: final_subcategories.count(subcategory) / len(final_subcategories)
-            for subcategory in unique_subcategories
-        }
+    final_filtered_ids = []
+    unique_subcategories = list(set(final_subcategories))
 
-        for subcategory_id, ratio in subcategory_ratio.items():
-            category_name = getCategoryName(subcategory_id)
-            category_filtered_ids = filter_by_category(db, [id[0] for id in all_place_ids], category_name)
-            filtered_distance_ids = filter_by_dist(db, category_filtered_ids, payload)
-            num_to_select = round(ratio * payload.top_n)
+    subcategory_ratio = {
+        subcategory: final_subcategories.count(subcategory) / len(final_subcategories)
+        for subcategory in unique_subcategories
+    }
 
-            final_filtered_ids.extend(filtered_distance_ids[:num_to_select])
+    for subcategory_id, ratio in subcategory_ratio.items():
+        category_name = getCategoryName(subcategory_id)
+        category_filtered_ids = filter_by_category(db, [id[0] for id in all_place_ids], category_name)
+        filtered_distance_ids = filter_by_dist(db, category_filtered_ids, payload, False)
+        num_to_select = round(ratio * payload.top_n)
+
+        final_filtered_ids.extend(filtered_distance_ids[:num_to_select])
+
+    if not final_filtered_ids:
+        final_filtered_ids = filter_by_dist(db, [id[0] for id in all_place_ids], payload, True)[:payload.top_n]
 
     return [
         place for id in final_filtered_ids
@@ -237,7 +238,7 @@ def get_collaborative_based_recommend(
     ]
 
 
-def filter_by_dist(db: Session, place_ids: List[int], payload: ContentBasedRecommedRequest) -> List[int]:
+def filter_by_dist(db: Session, place_ids: List[int], payload: ContentBasedRecommedRequest, empty) -> List[int]:
     user_lat, user_lon = payload.latitude, payload.longitude
 
     filtered_ids = (
@@ -249,7 +250,7 @@ def filter_by_dist(db: Session, place_ids: List[int], payload: ContentBasedRecom
             ~Place.id.in_(
                 db.query(VisitedPlace.place_id).filter(VisitedPlace.user_id == payload.user_id)
             ),
-            getHaversine(literal(user_lat), literal(user_lon), Place.pos_x, Place.pos_y) < 10,
+            *([] if empty else [getHaversine(literal(user_lat), literal(user_lon), Place.pos_x, Place.pos_y) < 10]),
             case(
                 (
                     NaverPlace.score.isnot(None) & KakaoPlace.score.isnot(None),
